@@ -145,6 +145,7 @@ INSTALLED_APPS = (
     'tags',
     'document_comments',
     'user_management',
+    'geocoding',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
