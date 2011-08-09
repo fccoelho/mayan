@@ -177,7 +177,7 @@ class Document(models.Model):
             # If converter backend doesn't understand the format,
             # use 1 as the total page count
             detected_pages = 1
-            self.description = ugettext(u'This document\'s file format is not known, the page count has therefore defaulted to 1.')
+            self.description = unicode(ugettext(u'This document\'s file format is not known, the page count has therefore defaulted to 1.'))
             self.save()
         try:
             os.remove(filepath)
