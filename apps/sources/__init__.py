@@ -1,8 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 
 from navigation.api import register_links, \
-    register_model_list_columns, register_multi_item_links, \
-    register_sidebar_template
+    register_model_list_columns
 from permissions.api import register_permission, set_namespace_title
 
 from sources.staging import StagingFile
@@ -46,12 +45,14 @@ register_links(SourceTransformation, [setup_source_transformation_edit, setup_so
 #register_links(['setup_web_form_list', 'setup_staging_folder_list', 'setup_watch_folder_list', 'setup_source_create'], [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')
 register_links(['setup_web_form_list', 'setup_staging_folder_list', 'setup_watch_folder_list', 'setup_source_create'], [setup_web_form_list, setup_staging_folder_list], menu_name='form_header')
 
-register_links(WebForm, [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')
+#register_links(WebForm, [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')
+register_links(WebForm, [setup_web_form_list, setup_staging_folder_list], menu_name='form_header')
 register_links(WebForm, [setup_source_transformation_list, setup_source_edit, setup_source_delete])
 
 register_links(['setup_web_form_list', 'setup_staging_folder_list', 'setup_watch_folder_list', 'setup_source_edit', 'setup_source_delete', 'setup_source_create'], [setup_source_create], menu_name='sidebar')
 
-register_links(StagingFolder, [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')
+#register_links(StagingFolder, [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')
+register_links(StagingFolder, [setup_web_form_list, setup_staging_folder_list], menu_name='form_header')
 register_links(StagingFolder, [setup_source_transformation_list, setup_source_edit, setup_source_delete])
 
 register_links(WatchFolder, [setup_web_form_list, setup_staging_folder_list, setup_watch_folder_list], menu_name='form_header')

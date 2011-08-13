@@ -4,7 +4,19 @@
 
 * Perform extra validation of the image cache directory and fallback to
   creating a temporary directory on validation failure
+  
+* Added remediatory code to sidestep issue #10 caused by DjangoZoom's 
+  deployment script executing the collectstatic command before creating
+  the database structure with syncdb.  Thanks to Joost Cassee
+  (https://github.com/jcassee) for reporting this one.
+  
+* Updated the static media url in the login excempt url list
 
+* Use Pillow (http://pypi.python.org/pypi/Pillow) instead of PIL
+  - Pillow is a fork of PIL with several updated including better 
+    jpeg and png library detection
+  - Users must uninstall PIL before installing Pillow
+  
 
 2011-08-06
 Tag: Version 0.8.2 

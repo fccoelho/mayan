@@ -10,11 +10,9 @@ try:
 except RuntimeError:
     USE_GHOSTSCRIPT = False
 
-from django.utils.translation import ugettext_lazy as _
-
 from mimetype.api import get_mimetype
 
-from converter.exceptions import ConvertError, UnknownFileFormat, IdentifyError
+from converter.exceptions import UnknownFileFormat
 from converter.backends import ConverterBase
 from converter.literals import TRANSFORMATION_RESIZE, \
     TRANSFORMATION_ROTATE, TRANSFORMATION_ZOOM
@@ -26,7 +24,7 @@ from converter.utils import cleanup
 class ConverterClass(ConverterBase):
     def get_page_count(self, input_filepath):
         page_count = 1
-        
+
         mimetype, encoding = get_mimetype(input_filepath)
         if mimetype == 'application/pdf':
             # If file is a PDF open it with slate to determine the page
@@ -37,7 +35,7 @@ class ConverterClass(ConverterBase):
             
         try:
             im = Image.open(input_filepath)
-        except IOError:  #cannot identify image file
+        except IOError:  # cannot identify image file
             raise UnknownFileFormat
             
         try:
@@ -46,10 +44,10 @@ class ConverterClass(ConverterBase):
                 page_count += 1
                 # do something to im
         except EOFError:
-            pass # end of sequence
+            pass  # end of sequence
             
         return page_count
-    
+
     def convert_file(self, input_filepath, output_filepath, transformations=None, page=DEFAULT_PAGE_NUMBER, file_format=DEFAULT_FILE_FORMAT):
         tmpfile = None
         mimetype, encoding = get_mimetype(input_filepath)
@@ -79,12 +77,13 @@ class ConverterClass(ConverterBase):
             ] 
 
             ghostscript.Ghostscript(*args)
-            page = 1 # Don't execute the following while loop
+            page = 1  # Don't execute the following while loop
             input_filepath = tmpfile    
 
         try:
             im = Image.open(input_filepath)
-        except Exception: # Python Imaging Library doesn't recognize it as an image
+        except Exception:
+            # Python Imaging Library doesn't recognize it as an image
             raise UnknownFileFormat
         finally:
             if tmpfile:
@@ -97,7 +96,8 @@ class ConverterClass(ConverterBase):
                 current_page += 1
                 # do something to im
         except EOFError:
-            pass # end of sequence        
+            # end of sequence
+            pass
         
         try:
             if transformations:
@@ -110,7 +110,7 @@ class ConverterClass(ConverterBase):
                         im = self.resize(im, (width, height))
                     elif transformation['transformation'] == TRANSFORMATION_ZOOM:
                         decimal_value = float(arguments.get('percent', 100)) / 100
-                        im = im.transform((im.size[0] * decimal_value, im.size[1] * decimal_value), Image.EXTENT, (0, 0, im.size[0], im.size[1])) 
+                        im = im.transform((int(im.size[0] * decimal_value), int(im.size[1] * decimal_value)), Image.EXTENT, (0, 0, im.size[0], im.size[1])) 
                     elif transformation['transformation'] == TRANSFORMATION_ROTATE:
                         # PIL counter degress counter-clockwise, reverse them
                         im = im.rotate(360 - arguments.get('degrees', 0))
@@ -130,10 +130,14 @@ class ConverterClass(ConverterBase):
         """
         formats = []
         for format_name in Image.ID:
-            formats.append((format_name, u''))
+            if format_name == 'GBR':
+                formats.append('GBR_PIL')
+            else:
+                formats.append(format_name)
         
-        #if USE_GHOSTSCRIPT:
-        #PDF, PS    
+        if USE_GHOSTSCRIPT:
+            formats.append('PDF')
+            formats.append('PS')
         
         return formats
 
@@ -153,7 +157,7 @@ class ConverterClass(ConverterBase):
         '''
         #preresize image with factor 2, 4, 8 and fast algorithm
         factor = 1
-        while img.size[0]/factor > 2 * box[0] and img.size[1] * 2/factor > 2 * box[1]:
+        while img.size[0] / factor > 2 * box[0] and img.size[1] * 2 / factor > 2 * box[1]:
             factor *=2
         if factor > 1:
             img.thumbnail((img.size[0] / factor, img.size[1] / factor), Image.NEAREST)

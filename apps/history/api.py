@@ -1,8 +1,15 @@
 import pickle
 import json
 
+try:
+    from psycopg2 import OperationalError
+except ImportError:
+    class OperationalError(Exception):
+        pass
+
+from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
 from django.db.utils import DatabaseError
-#from django.utils import simplejson
 from django.core import serializers
 from django.shortcuts import get_object_or_404
 from django.db import models
@@ -11,6 +18,7 @@ from history.models import HistoryType, History
 from history.runtime_data import history_types_dict
 
 
+@transaction.commit_manually
 def register_history_type(history_type_dict):
     namespace = history_type_dict['namespace']
     name = history_type_dict['name']
@@ -29,8 +37,14 @@ def register_history_type(history_type_dict):
             'expressions': history_type_dict.get('expressions', []),
         }
     except DatabaseError:
-        #Special case for ./manage.py syncdb
-        pass
+        transaction.rollback()
+        # Special case for ./manage.py syncdb
+    except (OperationalError, ImproperlyConfigured):
+        transaction.rollback()
+        # Special for DjangoZoom, which executes collectstatic media
+        # doing syncdb and creating the database tables
+    else:
+        transaction.commit()
 
 
 def create_history(history_type_dict, source_object=None, data=None):

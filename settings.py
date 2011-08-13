@@ -10,7 +10,7 @@ sys.path.append(os.path.join(PROJECT_ROOT, 'apps'))
 sys.path.append(os.path.join(PROJECT_ROOT, 'shared_apps'))
 sys.path.append(os.path.join(PROJECT_ROOT, '3rd_party_apps'))
 
-PROJECT_TITLE = 'Mayan'
+PROJECT_TITLE = 'Mayan EDMS'
 PROJECT_NAME = 'mayan'
 
 DEBUG = False
@@ -280,7 +280,7 @@ LOGIN_EXEMPT_URLS = (
     r'^favicon\.ico$',
     r'^about\.html$',
     r'^legal/',  # allow the entire /legal/* subsection
-    r'^%s-site_media/' % PROJECT_NAME,
+    r'^%s-static/' % PROJECT_NAME,
 
     r'^accounts/register/$',
     r'^accounts/register/complete/$',
