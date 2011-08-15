@@ -1,27 +1,16 @@
 import os
-import hashlib
 
 from django.utils import simplejson
 from django.http import HttpResponse
-from django.template.defaultfilters import slugify
 
 from documents.models import Document, DocumentType
 from metadata.models import MetadataType, MetadataSet
 
+from exporter.api import export_queryset, get_hash
+    
 FORMAT_VERSION = 1.0
-HASH_FUNCTION = lambda x: hashlib.sha256(x).hexdigest()
-
-
-def get_hash(obj):
-    if obj:
-        return u'%s_%s' % (HASH_FUNCTION(unicode(obj)), slugify(unicode(obj)))
-    else:
-        return None
-
 
 '''
-
-
 comments
 tags
 folders    
@@ -52,99 +41,120 @@ def export_test(request):
     big_list = []
     big_list.append({'version': FORMAT_VERSION})
     
-    for metadata_type in MetadataType.objects.all():
-        big_list.append(
-            {
-                'metadata_types': [
-                    {
-                        'id': get_hash(metadata_type.name),
-                        'name': metadata_type.name,
-                        'title': metadata_type.title,
-                        'default': metadata_type.default,
-                        'lookup': metadata_type.lookup,
-                    }
-                ]
+    big_list.append(export_queryset(MetadataType.objects.all(), {
+        'title': 'metadata_types', 'elements': [
+            {'attribute': 'name'},
+            {'attribute': 'title'},
+            {'attribute': 'default'},
+            {'attribute': 'lookup'},
+        ]
+    }))
+    
+    big_list.append(export_queryset(MetadataSet.objects.all(), {
+        'title': 'metadata_set', 'elements': [
+            {'title': 'id', 'attribute': lambda x: get_hash(x.title)},
+            {'title': 'name', 'attribute': 'title'},
+            {'sub_element': {
+                'title': 'metadata_types',
+                'queryset': lambda x: x.metadatasetitem_set.all(),
+                'elements': [
+                    {'title': 'name', 'attribute': lambda x: x.metadata_type.name}
+                ]}
             }
-        )    
-
-    for metadata_set in MetadataSet.objects.all():
-        big_list.append(
+        ]
+    }))
+        
+    big_list.append(export_queryset(DocumentType.objects.all(), {
+        'title': 'document_types', 'elements': [
+            {'title': 'id', 'attribute': lambda x: get_hash(x.name)},
+            {'attribute': 'name'},
             {
-                'metadata_sets': [
-                    {
-                        'id': get_hash(metadata_set.title),
-                        'name': metadata_set.title,
-                        'metadata_types': [
-                            {
-                                'id': get_hash(metadata_type),
+                'sub_element': {
+                    'title': 'filenames',
+                    'queryset': lambda x: x.documenttypefilename_set.all(),
+                    'elements': [
+                        {'attribute': 'filename'},
+                        {'attribute': 'enabled'}
+                    ]
+                }
+            },
+            {
+                'sub_element': {
+                    'title': 'metadata_defaults',
+                    'queryset': lambda x: x.documenttypedefaults_set.all(),
+                    'elements': [
+                        {
+                            'sub_element': {
+                                'title': 'metadata_types',
+                                'queryset': lambda x: x.default_metadata.all(),
+                                'elements': [
+                                    {'attribute': 'name'}
+                                ]
                             }
-                            for metadata_type in metadata_set.metadatasetitem_set.all()
-                        ]
-                    }
-                ]
+                        },
+                        {
+                            'sub_element': {
+                                'title': 'metadata_sets',
+                                'queryset': lambda x: x.default_metadata_sets.all(),
+                                'elements': [
+                                    {'title': 'id', 'attribute': lambda x: get_hash(x.title)}
+                                ]
+                            }
+                         }                     
+                    ]
+                }
             }
-        )
+        ]
+    }))
     
     
-    for document_type in DocumentType.objects.all():
-        big_list.append(
+    big_list.append(export_queryset(Document.objects.all()[:10], {
+        'title': 'documents', 'elements': [
+            {'title': 'document_type', 'attribute': lambda x: get_hash(x.document_type)},
+            {'title': 'filename', 'attribute': lambda x: os.extsep.join([x.file_filename, x.file_extension])},
+            {'attribute': 'uuid'},
+            {'title': 'description', 'attribute': lambda x: unicode(x.description) if x.description else None},
             {
-                'document_types': [
-                    {
-                        'id': get_hash(document_type.name),
-                        'name': document_type.name,
-                        'filenames': [
-                            {
-                                'filename': doc_type_filename.filename,
-                                'enabled': doc_type_filename.enabled,
-                            }
-                            for doc_type_filename in document_type.documenttypefilename_set.all()
-                        ],
-                        'metadata_defaults': [
-                            {
-                                'default_metadata': [get_hash(metadata_type.name) for metadata_type in doc_type_defaults.default_metadata.all()],
-                                'default_metadata_sets': [get_hash(metadata_set.title) for metadata_set in doc_type_defaults.default_metadata_sets.all()],
-                            }
-                            for doc_type_defaults in document_type.documenttypedefaults_set.all()
-                        ]
-                    }
-                ]
-            }
-        )
-    
-    for document in Document.objects.all()[:10]:
-        big_list.append(
+                'sub_element': {
+                    'title': 'tags',
+                    'queryset': lambda x: x.tags.all(),
+                    'elements': [
+                        {'title': 'id', 'attribute': lambda x: get_hash(x)},
+                    ]
+                }
+            },
             {
-                'documents': [
-                    {
-                        'document_type': get_hash(document.document_type),
-                        'filename': os.extsep.join([document.file_filename, document.file_extension]),
-                        #'date_added'
-                        'uuid': document.uuid,
-                        'description': unicode(document.description) if document.description else None,
-                        'tags': [get_hash(tag) for tag in document.tags.all()],
-                        'folders': [get_hash(folder_document.folder) for folder_document in document.folderdocument_set.all()],
-                        'comments': [
-                            {
-                                'comment': comment.comment,
-                                'user': unicode(comment.user),
-                                'submit_date': unicode(comment.submit_date),
-                            }
-                            for comment in document.comments.all()
-                        ],
-                        'versions': [
-                            {
-                                1.0: {
-                                    'mimetype': document.file_mimetype,
-                                    'encoding': document.file_mime_encoding,
-                                    #'date_updated'
-                                    'checksum': document.checksum,
-                                }
-                            }
-                        ]
-                    }
-                ]
+                'sub_element': {
+                    'title': 'folders',
+                    'queryset': lambda x: x.folderdocument_set.all(),
+                    'elements': [
+                        {'title': 'id', 'attribute': lambda x: get_hash(x.folder)},
+                    ]
+                }
+            },
+            {
+                'sub_element': {
+                    'title': 'comments',
+                    'queryset': lambda x: x.comments.all(),
+                    'elements': [
+                        {'attribute': 'comment'},
+                        {'title': 'user', 'attribute': lambda x: unicode(x.user)},
+                        {'title': 'submit_date', 'attribute': lambda x: unicode(x.submit_date)},
+                    ]
+                }
+            },   
+        ]
+    }))    
+    '''
+        'versions': [
+            {
+                1.0: {
+                    'mimetype': document.file_mimetype,
+                    'encoding': document.file_mime_encoding,
+                    #'date_updated'
+                    'checksum': document.checksum,
+                }
             }
-        )
-    
+        ]
+    '''
     return HttpResponse(simplejson.dumps(big_list, indent=4, ensure_ascii=True), mimetype='application/json')
