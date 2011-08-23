@@ -130,6 +130,7 @@ INSTALLED_APPS = (
     'smart_settings',
     'navigation',
     'lock_manager',
+    'queues',
     'web_theme',
     'common',
     'metadata',
