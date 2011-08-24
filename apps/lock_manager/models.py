@@ -21,6 +21,9 @@ class Lock(models.Model):
         self.creation_datetime = datetime.datetime.now()
         super(Lock, self).save(*args, **kwargs)
         
+    def release(self):
+        self.delete()
+        
     class Meta:
         verbose_name = _(u'lock')
         verbose_name_plural = _(u'locks')
