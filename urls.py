@@ -28,6 +28,7 @@ urlpatterns = patterns('',
     (r'^sources/', include('sources.urls')),
     (r'^project_setup/', include('project_setup.urls')),
     (r'^project_tools/', include('project_tools.urls')),
+    (r'^queues/', include('queues.urls')),
 )
 
 

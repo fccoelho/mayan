@@ -1,12 +1,12 @@
 from django.utils.translation import ugettext as _
 
-from ocr.models import DocumentQueue, QueueDocument
+#from ocr.models import DocumentQueue, QueueDocument
+from ocr.api import ocr_queue
 
 
 def get_statistics():
     paragraphs = [
-        _(u'Document queues: %d') % DocumentQueue.objects.count(),
-        _(u'Queued documents: %d') % QueueDocument.objects.only('pk').count()
+        _(u'Queued documents: %d') % ocr_queue.count()
     ]
 
     return {

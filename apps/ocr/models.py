@@ -15,29 +15,28 @@ from sources.managers import SourceTransformationManager
 from ocr.literals import DOCUMENTQUEUE_STATE_STOPPED, \
     DOCUMENTQUEUE_STATE_CHOICES, QUEUEDOCUMENT_STATE_PENDING, \
     QUEUEDOCUMENT_STATE_CHOICES
-from ocr.managers import DocumentQueueManager
+#from ocr.managers import DocumentQueueManager
 
 
-class DocumentQueue(models.Model):
-    name = models.CharField(max_length=64, unique=True, verbose_name=_(u'name'))
-    label = models.CharField(max_length=64, verbose_name=_(u'label'))
-    state = models.CharField(max_length=4,
-        choices=DOCUMENTQUEUE_STATE_CHOICES,
-        default=DOCUMENTQUEUE_STATE_STOPPED,
-        verbose_name=_(u'state'))
+#class DocumentQueue(models.Model):
+#    name = models.CharField(max_length=64, unique=True, verbose_name=_(u'name'))
+#    label = models.CharField(max_length=64, verbose_name=_(u'label'))
+#    state = models.CharField(max_length=4,
+#        choices=DOCUMENTQUEUE_STATE_CHOICES,
+#        default=DOCUMENTQUEUE_STATE_STOPPED,
+#        verbose_name=_(u'state'))##
+#
+#    objects = DocumentQueueManager()##
+#
+#    class Meta:
+#        verbose_name = _(u'document queue')
+#        verbose_name_plural = _(u'document queues')#
+#
+#    def __unicode__(self):
+#        return self.label
 
-    objects = DocumentQueueManager()
 
-    class Meta:
-        verbose_name = _(u'document queue')
-        verbose_name_plural = _(u'document queues')
-
-    def __unicode__(self):
-        return self.label
-
-
-class QueueDocument(models.Model):
-    document_queue = models.ForeignKey(DocumentQueue, verbose_name=_(u'document queue'))
+class OCRLog(models.Model):
     document = models.ForeignKey(Document, verbose_name=_(u'document'))
     datetime_submitted = models.DateTimeField(verbose_name=_(u'date time submitted'), auto_now_add=True, db_index=True)
     delay = models.BooleanField(verbose_name=_(u'delay ocr'), default=False)
@@ -46,15 +45,15 @@ class QueueDocument(models.Model):
         default=QUEUEDOCUMENT_STATE_PENDING,
         verbose_name=_(u'state'))
     result = models.TextField(blank=True, null=True, verbose_name=_(u'result'))
-    node_name = models.CharField(max_length=32, verbose_name=_(u'node name'), blank=True, null=True)
+    #node_name = models.CharField(max_length=32, verbose_name=_(u'node name'), blank=True, null=True)
 
     class Meta:
         ordering = ('datetime_submitted',)
-        verbose_name = _(u'queue document')
-        verbose_name_plural = _(u'queue documents')
+        verbose_name = _(u'queued document')
+        verbose_name_plural = _(u'queued documents')
 
-    def get_transformation_list(self):
-        return QueueTransformation.transformations.get_for_object_as_list(self)
+    #def get_transformation_list(self):
+    #    return QueueTransformation.transformations.get_for_object_as_list(self)
 
     def __unicode__(self):
         try:

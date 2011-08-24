@@ -6,22 +6,27 @@ import subprocess
 import tempfile
 import sys
 
+
 from django.utils.translation import ugettext as _
 from django.utils.importlib import import_module
 
 from common.conf.settings import TEMPORARY_DIRECTORY
 from converter.api import convert
 from documents.models import DocumentPage
+from queues.models import Queue
+from queues.exceptions import AlreadyLocked, AlreadyUnlocked
 
 from ocr.conf.settings import TESSERACT_PATH
 from ocr.conf.settings import TESSERACT_LANGUAGE
-from ocr.exceptions import TesseractError, UnpaperError
 from ocr.conf.settings import UNPAPER_PATH
+from ocr.exceptions import TesseractError, UnpaperError
 from ocr.parsers import parse_document_page
 from ocr.parsers.exceptions import ParserError, ParserUnknownFile
 from ocr.literals import DEFAULT_OCR_FILE_FORMAT, UNPAPER_FILE_FORMAT, \
     DEFAULT_OCR_FILE_EXTENSION
+#from ocr.models import OCRLog
 
+ocr_queue = Queue.objects.get_queue(name='ocr', label='OCR')
 
 def get_language_backend():
     """
@@ -171,3 +176,33 @@ def execute_unpaper(input_filepath, output_filepath):
     return_code = proc.wait()
     if return_code != 0:
         raise UnpaperError(proc.stderr.readline())
+
+
+def queue_document(document):
+    """
+    Handle adding documents to an OCR document queue
+    """
+    ocr_queue.push(document)
+
+        
+    #ocr_log = OCRLog.objects.get_or_create(document=document)
+    #def queue_document(self, document, queue_name='default'):
+    #    document_queue = self.model.objects.get(name=queue_name)
+    #    if document_queue.queuedocument_set.filter(document=document):
+    #        raise AlreadyQueued#
+    #    document_queue.queuedocument_set.create(document=document, delay=True)
+    #    return document_queue
+    
+
+def stop_queue():
+    try:
+        ocr_queue.lock_output()
+    except AlreadyLocked:
+        raise AlreadyDisabled
+        
+    
+def start_queue():
+    try:
+        ocr_queue.unlock_output()
+    except AlreadyUnlocked:
+        raise AlreadyEnabled

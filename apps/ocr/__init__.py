@@ -21,8 +21,9 @@ from scheduler.api import register_interval_job
 
 from ocr.conf.settings import AUTOMATIC_OCR
 from ocr.conf.settings import QUEUE_PROCESSING_INTERVAL
-from ocr.models import DocumentQueue, QueueTransformation
+from ocr.models import OCRLog, QueueTransformation
 from ocr.tasks import task_process_document_queues
+from ocr.api import queue_document
 
 #Permissions
 PERMISSION_OCR_DOCUMENT = {'namespace': 'ocr', 'name': 'ocr_document', 'label': _(u'Submit document for OCR')}
@@ -55,7 +56,7 @@ all_document_ocr_cleanup = {'text': _(u'clean up pages content'), 'view': 'all_d
 queue_document_list = {'text': _(u'queue document list'), 'view': 'queue_document_list', 'famfam': 'hourglass', 'permissions': [PERMISSION_OCR_DOCUMENT]}
 ocr_tool_link = {'text': _(u'OCR'), 'view': 'queue_document_list', 'famfam': 'hourglass', 'icon': 'text.png', 'permissions': [PERMISSION_OCR_DOCUMENT]}
 
-node_active_list = {'text': _(u'active tasks'), 'view': 'node_active_list', 'famfam': 'server_chart', 'permissions': [PERMISSION_OCR_DOCUMENT]}
+#node_active_list = {'text': _(u'active tasks'), 'view': 'node_active_list', 'famfam': 'server_chart', 'permissions': [PERMISSION_OCR_DOCUMENT]}
 
 setup_queue_transformation_list = {'text': _(u'transformations'), 'view': 'setup_queue_transformation_list', 'args': 'queue.pk', 'famfam': 'shape_move_front'}
 setup_queue_transformation_create = {'text': _(u'add transformation'), 'view': 'setup_queue_transformation_create', 'args': 'queue.pk', 'famfam': 'shape_square_add'}
@@ -63,17 +64,18 @@ setup_queue_transformation_edit = {'text': _(u'edit'), 'view': 'setup_queue_tran
 setup_queue_transformation_delete = {'text': _(u'delete'), 'view': 'setup_queue_transformation_delete', 'args': 'transformation.pk', 'famfam': 'shape_square_delete'}
 
 register_links(Document, [submit_document])
-register_links(DocumentQueue, [document_queue_disable, document_queue_enable, setup_queue_transformation_list])
+register_links(OCRLog, [document_queue_disable, document_queue_enable, setup_queue_transformation_list])
 register_links(QueueTransformation, [setup_queue_transformation_edit, setup_queue_transformation_delete])
 
 register_multi_item_links(['queue_document_list'], [re_queue_multiple_document, queue_document_multiple_delete])
 
-register_links(['setup_queue_transformation_create', 'setup_queue_transformation_edit', 'setup_queue_transformation_delete', 'document_queue_disable', 'document_queue_enable', 'queue_document_list', 'node_active_list', 'setup_queue_transformation_list'], [queue_document_list, node_active_list], menu_name='secondary_menu')
+#register_links(['setup_queue_transformation_create', 'setup_queue_transformation_edit', 'setup_queue_transformation_delete', 'document_queue_disable', 'document_queue_enable', 'queue_document_list', 'node_active_list', 'setup_queue_transformation_list'], [queue_document_list, node_active_list], menu_name='secondary_menu')
+register_links(['setup_queue_transformation_create', 'setup_queue_transformation_edit', 'setup_queue_transformation_delete', 'document_queue_disable', 'document_queue_enable', 'queue_document_list', 'setup_queue_transformation_list'], [queue_document_list], menu_name='secondary_menu')
 register_links(['setup_queue_transformation_edit', 'setup_queue_transformation_delete', 'setup_queue_transformation_list', 'setup_queue_transformation_create'], [setup_queue_transformation_create], menu_name='sidebar')
 
 register_maintenance(all_document_ocr_cleanup, namespace='ocr', title=_(u'OCR'))
 
-
+'''
 @transaction.commit_manually
 def create_default_queue():
     try:
@@ -90,16 +92,14 @@ def create_default_queue():
         # doing syncdb and creating the database tables
     else:
         transaction.commit()
-
+'''
 
 def document_post_save(sender, instance, **kwargs):
     if kwargs.get('created', False):
         if AUTOMATIC_OCR:
-            DocumentQueue.objects.queue_document(instance)
+            queue_document(instance)
 
 post_save.connect(document_post_save, sender=Document)
-
-create_default_queue()
 
 register_interval_job('task_process_document_queues', _(u'Checks the OCR queue for pending documents.'), task_process_document_queues, seconds=QUEUE_PROCESSING_INTERVAL)
 
