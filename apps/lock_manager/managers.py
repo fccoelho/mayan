@@ -33,6 +33,7 @@ class LockManager(models.Manager):
                 lock.timeout=timeout
                 lock.save()
                 transaction.commit()
+                return lock
             else:
                 raise LockError('Unable to acquire lock')
         except DatabaseError:
@@ -44,6 +45,7 @@ class LockManager(models.Manager):
             # doing syncdb and creating the database tables
         else:
             transaction.commit()
+            return lock
         
     @transaction.commit_manually
     def release_lock(self, name):
