@@ -29,10 +29,10 @@ from ocr.api import clean_pages, queue_document, stop_queue, start_queue
 from ocr.forms import QueueTransformationForm, QueueTransformationForm_create
 
 
-def queue_document_list(request, queue_name='default'):
+def queue_document_list(request):
     check_permissions(request.user, [PERMISSION_OCR_DOCUMENT])
 
-    document_queue = get_object_or_404(DocumentQueue, name=queue_name)
+    #document_queue = get_object_or_404(DocumentQueue, name=queue_name)
 
     return object_list(
         request,
